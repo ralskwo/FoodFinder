@@ -1,6 +1,7 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.database import db
 import json
+import warnings
 
 
 class UserPreference(db.Model):
@@ -18,19 +19,25 @@ class UserPreference(db.Model):
     max_price_per_person = db.Column(db.Integer)  # 원
     max_delivery_fee = db.Column(db.Integer)  # 원
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
     @property
     def favorite_categories(self):
         """카테고리 리스트 반환"""
         if self._favorite_categories:
-            return json.loads(self._favorite_categories)
+            try:
+                return json.loads(self._favorite_categories)
+            except (json.JSONDecodeError, TypeError) as e:
+                warnings.warn(f"Failed to decode favorite_categories: {e}")
+                return []
         return []
 
     @favorite_categories.setter
     def favorite_categories(self, value):
         """카테고리 리스트 저장"""
+        if not isinstance(value, list):
+            raise ValueError("favorite_categories must be a list")
         self._favorite_categories = json.dumps(value, ensure_ascii=False)
 
     def to_dict(self):
@@ -42,3 +49,6 @@ class UserPreference(db.Model):
             'max_price_per_person': self.max_price_per_person,
             'max_delivery_fee': self.max_delivery_fee,
         }
+
+    def __repr__(self):
+        return f'<UserPreference {self.session_id}>'

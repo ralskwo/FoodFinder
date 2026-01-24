@@ -83,3 +83,60 @@ def test_user_preference_creation(app):
         assert found is not None
         assert '한식' in found.favorite_categories
         assert found.max_distance == 2000
+
+
+def test_user_preference_invalid_categories(app):
+    """잘못된 카테고리 타입 테스트"""
+    with app.app_context():
+        pref = UserPreference(session_id='test-invalid')
+
+        # 리스트가 아닌 값 설정 시 에러 발생
+        with pytest.raises(ValueError):
+            pref.favorite_categories = "not a list"
+
+
+def test_restaurant_invalid_coordinates(app):
+    """잘못된 좌표 범위 테스트"""
+    with app.app_context():
+        from sqlalchemy.exc import IntegrityError
+
+        # 위도 범위 초과
+        restaurant = Restaurant(
+            place_id='invalid-lat',
+            name='Test',
+            latitude=91.0,  # 범위 초과
+            longitude=126.9780
+        )
+        db.session.add(restaurant)
+
+        with pytest.raises(IntegrityError):
+            db.session.commit()
+
+        db.session.rollback()
+
+
+def test_user_preference_repr(app):
+    """UserPreference __repr__ 테스트"""
+    with app.app_context():
+        pref = UserPreference(session_id='test-repr')
+        assert repr(pref) == '<UserPreference test-repr>'
+
+
+def test_restaurant_negative_delivery_fee(app):
+    """음수 배달비 테스트"""
+    with app.app_context():
+        from sqlalchemy.exc import IntegrityError
+
+        restaurant = Restaurant(
+            place_id='invalid-fee',
+            name='Test',
+            latitude=37.5665,
+            longitude=126.9780,
+            delivery_fee=-1000  # 음수
+        )
+        db.session.add(restaurant)
+
+        with pytest.raises(IntegrityError):
+            db.session.commit()
+
+        db.session.rollback()

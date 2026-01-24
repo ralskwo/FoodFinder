@@ -1,5 +1,6 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from backend.database import db
+from sqlalchemy import CheckConstraint
 
 
 class Restaurant(db.Model):
@@ -21,8 +22,17 @@ class Restaurant(db.Model):
     delivery_fee = db.Column(db.Integer)  # 원 단위
     minimum_order = db.Column(db.Integer)  # 원 단위
 
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
+    updated_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
+
+    # 데이터 무결성 제약조건
+    __table_args__ = (
+        CheckConstraint('latitude >= -90 AND latitude <= 90', name='check_latitude_range'),
+        CheckConstraint('longitude >= -180 AND longitude <= 180', name='check_longitude_range'),
+        CheckConstraint('rating IS NULL OR (rating >= 0 AND rating <= 5)', name='check_rating_range'),
+        CheckConstraint('delivery_fee IS NULL OR delivery_fee >= 0', name='check_delivery_fee_positive'),
+        CheckConstraint('minimum_order IS NULL OR minimum_order >= 0', name='check_minimum_order_positive'),
+    )
 
     def to_dict(self):
         """딕셔너리로 변환"""
