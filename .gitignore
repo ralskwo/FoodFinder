@@ -1,0 +1,30 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+*.egg-info/
+
+# 환경 변수
+.env
+
+# 데이터베이스
+*.db
+*.sqlite
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
+npm-debug.log
+yarn-error.log
+
+# Build
+build/
+dist/
