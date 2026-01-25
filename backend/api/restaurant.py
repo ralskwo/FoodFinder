@@ -3,6 +3,9 @@ from backend.api.naver_map import NaverMapClient
 from backend.database import db
 from backend.models.restaurant import Restaurant
 from backend.config import Config
+import logging
+
+logger = logging.getLogger(__name__)
 
 restaurant_bp = Blueprint('restaurant', __name__)
 
@@ -19,10 +22,17 @@ def search_restaurants():
     if 'latitude' not in data or 'longitude' not in data:
         return jsonify({'error': '위치 정보는 필수입니다'}), 400
 
-    query = data['query']
-    latitude = float(data['latitude'])
-    longitude = float(data['longitude'])
-    radius = data.get('radius', Config.DEFAULT_SEARCH_RADIUS)
+    # 입력값 변환 및 검증
+    try:
+        query = data['query']
+        latitude = float(data['latitude'])
+        longitude = float(data['longitude'])
+        radius = int(data.get('radius', Config.DEFAULT_SEARCH_RADIUS))
+    except (ValueError, TypeError) as e:
+        logger.warning(f"입력값 변환 실패: {e}")
+        return jsonify({'error': '잘못된 입력값입니다'}), 400
+
+    logger.info(f"맛집 검색 요청: query={query}, lat={latitude}, lon={longitude}")
 
     # 네이버 API 호출
     naver_client = NaverMapClient(
@@ -42,6 +52,8 @@ def search_restaurants():
         categories = data['categories']
         results = [r for r in results if r.get('category') in categories]
 
+    logger.info(f"검색 결과: {len(results)}개")
+
     return jsonify({
         'results': results,
         'count': len(results)
@@ -53,29 +65,36 @@ def update_delivery_info(place_id):
     """배달 정보 업데이트 (사용자 입력)"""
     data = request.get_json()
 
-    restaurant = Restaurant.query.filter_by(place_id=place_id).first()
+    try:
+        restaurant = Restaurant.query.filter_by(place_id=place_id).first()
 
-    if not restaurant:
-        # 새로운 레스토랑 정보 생성 - 필수 필드 포함
-        restaurant = Restaurant(
-            place_id=place_id,
-            name=data.get('name', 'Unknown'),
-            latitude=data.get('latitude', 0.0),
-            longitude=data.get('longitude', 0.0)
-        )
-        db.session.add(restaurant)
+        if not restaurant:
+            # 새로운 레스토랑 정보 생성
+            restaurant = Restaurant(
+                place_id=place_id,
+                name=data.get('name', 'Unknown'),
+                latitude=float(data.get('latitude', 0.0)),
+                longitude=float(data.get('longitude', 0.0))
+            )
+            db.session.add(restaurant)
 
-    # 배달 정보 업데이트
-    if 'delivery_fee' in data:
-        restaurant.delivery_fee = data['delivery_fee']
-        restaurant.delivery_available = True
+        # 배달 정보 업데이트
+        if 'delivery_fee' in data:
+            restaurant.delivery_fee = data['delivery_fee']
+            restaurant.delivery_available = True
 
-    if 'minimum_order' in data:
-        restaurant.minimum_order = data['minimum_order']
+        if 'minimum_order' in data:
+            restaurant.minimum_order = data['minimum_order']
 
-    db.session.commit()
+        db.session.commit()
+        logger.info(f"배달 정보 업데이트 완료: {place_id}")
 
-    return jsonify(restaurant.to_dict()), 200
+        return jsonify(restaurant.to_dict()), 200
+
+    except Exception as e:
+        db.session.rollback()
+        logger.error(f"배달 정보 업데이트 실패: {e}")
+        return jsonify({'error': '업데이트에 실패했습니다'}), 500
 
 
 @restaurant_bp.route('/restaurants/nearby', methods=['GET'])
@@ -85,13 +104,15 @@ def get_nearby_restaurants():
     longitude = request.args.get('lon', type=float)
     max_delivery_fee = request.args.get('max_delivery_fee', type=int)
 
-    if not latitude or not longitude:
+    if latitude is None or longitude is None:
         return jsonify({'error': '위치 정보는 필수입니다'}), 400
+
+    logger.info(f"주변 맛집 조회: lat={latitude}, lon={longitude}")
 
     # 배달 가능한 레스토랑 조회
     query = Restaurant.query.filter_by(delivery_available=True)
 
-    if max_delivery_fee:
+    if max_delivery_fee is not None:
         query = query.filter(Restaurant.delivery_fee <= max_delivery_fee)
 
     restaurants = query.all()
