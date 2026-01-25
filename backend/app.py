@@ -1,7 +1,7 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.database import db, init_db
-from backend.config import Config
+from database import db, init_db
+from config import Config
 
 
 def create_app(config_override=None):
@@ -20,7 +20,7 @@ def create_app(config_override=None):
     init_db(app)
 
     # 블루프린트 등록
-    from backend.api.restaurant import restaurant_bp
+    from api.restaurant import restaurant_bp
     app.register_blueprint(restaurant_bp, url_prefix='/api')
 
     # 헬스 체크

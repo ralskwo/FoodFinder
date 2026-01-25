@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify
-from backend.api.naver_map import NaverMapClient
-from backend.database import db
-from backend.models.restaurant import Restaurant
-from backend.config import Config
+from api.naver_map import NaverMapClient
+from database import db
+from models.restaurant import Restaurant
+from config import Config
 import logging
 
 logger = logging.getLogger(__name__)
