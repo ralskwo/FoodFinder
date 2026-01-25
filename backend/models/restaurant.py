@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from backend.database import db
+from database import db
 from sqlalchemy import CheckConstraint
 
 
