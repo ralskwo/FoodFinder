@@ -1,4 +1,5 @@
 import pytest
+import requests
 from unittest.mock import patch, Mock
 from backend.api.naver_map import NaverMapClient
 
@@ -46,4 +47,25 @@ def test_search_local_api_error(naver_client):
         mock_get.return_value.status_code = 401
 
         results = naver_client.search_local('한식')
+        assert results == []
+
+
+def test_search_local_network_error(naver_client):
+    """네트워크 에러 처리 테스트"""
+    with patch('backend.api.naver_map.requests.get') as mock_get:
+        mock_get.side_effect = requests.exceptions.RequestException("Connection failed")
+
+        results = naver_client.search_local('한식')
+        assert results == []
+
+
+def test_search_local_empty_response(naver_client):
+    """빈 응답 처리 테스트"""
+    mock_response = {'items': []}
+
+    with patch('backend.api.naver_map.requests.get') as mock_get:
+        mock_get.return_value.status_code = 200
+        mock_get.return_value.json.return_value = mock_response
+
+        results = naver_client.search_local('없는음식점')
         assert results == []

@@ -1,6 +1,9 @@
 import requests
 from typing import List, Dict, Optional
 import re
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class NaverMapClient:
@@ -52,7 +55,7 @@ class NaverMapClient:
             )
 
             if response.status_code != 200:
-                print(f"API 에러: {response.status_code}")
+                logger.warning(f"API 에러: {response.status_code}")
                 return []
 
             data = response.json()
@@ -72,7 +75,7 @@ class NaverMapClient:
             return results
 
         except requests.exceptions.RequestException as e:
-            print(f"네트워크 에러: {e}")
+            logger.error(f"네트워크 에러: {e}")
             return []
 
     def _parse_item(self, item: Dict) -> Dict:
