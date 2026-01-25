@@ -1,31 +1,193 @@
+# ============================================
 # Python
+# ============================================
 __pycache__/
 *.py[cod]
 *$py.class
 *.so
+*.dylib
 .Python
+
+# Virtual Environments
 env/
 venv/
+.venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Python Package Files
+*.egg
 *.egg-info/
+dist/
+build/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.manifest
+*.spec
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py,cover
+.hypothesis/
 .pytest_cache/
+pytestdebug.log
 
-# 환경 변수
+# ============================================
+# 환경 변수 및 민감한 정보
+# ============================================
 .env
+.env.local
+.env.*.local
+.env.production
+.env.development
+*.env
+!.env.example
 
+# API Keys and Secrets (추가 보안)
+*secret*
+*SECRET*
+*key.json
+*credentials.json
+config/secrets.py
+
+# ============================================
 # 데이터베이스
+# ============================================
 *.db
 *.sqlite
+*.sqlite3
+instance/
+*.db-journal
 
-# IDE
+# ============================================
+# IDE 및 에디터
+# ============================================
 .vscode/
 .idea/
 *.swp
+*.swo
+*~
+.project
+.pydevproject
+.settings/
+*.sublime-project
+*.sublime-workspace
 
-# Node
+# ============================================
+# Node.js / Frontend
+# ============================================
 node_modules/
-npm-debug.log
-yarn-error.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
 
-# Build
+# Frontend build
+.next/
+out/
+.nuxt
+.cache/
+.parcel-cache/
+
+# ============================================
+# OS 관련
+# ============================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+.Trash-*
+
+# ============================================
+# 로그 파일
+# ============================================
+*.log
+logs/
+*.log.*
+
+# ============================================
+# 임시 파일
+# ============================================
+*.tmp
+*.temp
+*.bak
+*.swp
+*.swo
+.~lock.*
+
+# ============================================
+# Build 및 배포
+# ============================================
 build/
 dist/
+*.tar.gz
+*.zip
+
+# ============================================
+# 기타
+# ============================================
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath
+*.sage.py
+
+# Spyder
+.spyderproject
+.spyproject
+
+# Rope
+.ropeproject
+
+# mkdocs
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre
+.pyre/
