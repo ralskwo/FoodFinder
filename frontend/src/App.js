@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import './App.css';
 import { searchRestaurants } from './services/api';
 import FilterPanel from './components/FilterPanel';
+import DeliveryInfoModal from './components/DeliveryInfoModal';
 
 function App() {
   const [location, setLocation] = useState(null);
@@ -15,6 +16,7 @@ function App() {
     maxDeliveryFee: null,
     maxPrice: null,
   });
+  const [selectedRestaurant, setSelectedRestaurant] = useState(null);
 
   useEffect(() => {
     if (navigator.geolocation) {
@@ -104,6 +106,12 @@ function App() {
                     <p className="address">{restaurant.road_address || restaurant.address}</p>
                     {restaurant.distance && <p className="distance">{restaurant.distance}m</p>}
                     {restaurant.telephone && <p className="phone">{restaurant.telephone}</p>}
+                    <button
+                      className="add-delivery-btn"
+                      onClick={() => setSelectedRestaurant(restaurant)}
+                    >
+                      배달 정보 추가
+                    </button>
                   </div>
                 ))}
               </div>
@@ -113,6 +121,16 @@ function App() {
           )}
         </div>
       </main>
+
+      {selectedRestaurant && (
+        <DeliveryInfoModal
+          restaurant={selectedRestaurant}
+          onClose={() => setSelectedRestaurant(null)}
+          onUpdate={(data) => {
+            console.log('Updated:', data);
+          }}
+        />
+      )}
     </div>
   );
 }
