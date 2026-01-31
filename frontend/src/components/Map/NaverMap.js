@@ -14,7 +14,8 @@ const NaverMap = ({
     const markersRef = useRef([]);
     const [address, setAddress] = useState('');
 
-    // 지도 초기화
+    // 지도 초기화 (최초 1회만 실행)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (!window.naver || !mapRef.current) return;
 
@@ -58,7 +59,7 @@ const NaverMap = ({
             const newCenter = new window.naver.maps.LatLng(center.lat, center.lng);
             mapInstanceRef.current.setCenter(newCenter);
         }
-    }, [center.lat, center.lng]);
+    }, [center, center.lat, center.lng]);
 
     // 마커 업데이트
     useEffect(() => {

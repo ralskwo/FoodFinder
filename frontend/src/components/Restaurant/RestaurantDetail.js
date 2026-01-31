@@ -7,6 +7,7 @@ const RestaurantDetail = ({ restaurant, onClose }) => {
     const [showContribute, setShowContribute] = useState(false);
     const [newMenu, setNewMenu] = useState({ name: "", price: "" });
 
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         loadMenus();
     }, [restaurant.place_id]);

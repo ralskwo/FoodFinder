@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import './App.css';
-import { searchRestaurants, reverseGeocode, geocodeAddress } from './services/api';
+import { searchRestaurants, reverseGeocode } from './services/api';
 import SplitLayout from './components/Layout/SplitLayout';
 import NaverMap from './components/Map/NaverMap';
 import FilterPanel from './components/FilterPanel';
