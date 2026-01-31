@@ -1,0 +1,143 @@
+.restaurant-detail {
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.detail-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #eee;
+}
+
+.back-btn {
+    background: none;
+    border: none;
+    font-size: 16px;
+    cursor: pointer;
+    color: #666;
+    padding: 4px 8px;
+}
+
+.back-btn:hover {
+    color: #333;
+}
+
+.detail-header h2 {
+    margin: 0;
+    font-size: 20px;
+}
+
+.detail-info {
+    margin-bottom: 24px;
+}
+
+.info-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 12px;
+}
+
+.info-row .separator {
+    color: #ddd;
+}
+
+.info-row .rating {
+    color: #f59f00;
+}
+
+.address, .phone {
+    font-size: 14px;
+    color: #333;
+    margin: 8px 0;
+}
+
+.menu-section {
+    background: #f8f9fa;
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.menu-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.menu-header h3 {
+    margin: 0;
+    font-size: 16px;
+}
+
+.add-menu-btn {
+    background: #4263eb;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.contribute-form {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #ddd;
+}
+
+.contribute-form input {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.contribute-form button {
+    padding: 8px 16px;
+    background: #4263eb;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.menu-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.menu-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px;
+    background: white;
+    border-radius: 4px;
+}
+
+.menu-row .menu-name {
+    font-size: 14px;
+}
+
+.menu-row .menu-price {
+    font-size: 14px;
+    color: #4263eb;
+    font-weight: 500;
+}
+
+.loading, .no-menus {
+    text-align: center;
+    color: #888;
+    font-size: 14px;
+    padding: 20px;
+}
