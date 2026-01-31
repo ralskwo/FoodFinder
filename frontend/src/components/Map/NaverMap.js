@@ -54,12 +54,13 @@ const NaverMap = ({
     }, []);
 
     // 중심 좌표 변경
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
         if (mapInstanceRef.current && center) {
             const newCenter = new window.naver.maps.LatLng(center.lat, center.lng);
             mapInstanceRef.current.setCenter(newCenter);
         }
-    }, [center, center.lat, center.lng]);
+    }, [center.lat, center.lng]);
 
     // 마커 업데이트
     useEffect(() => {
