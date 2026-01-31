@@ -71,6 +71,11 @@ pytestdebug.log
 *credentials.json
 config/secrets.py
 
+# Test files
+test_api.py
+test_search.py
+test_request.json
+
 # ============================================
 # 데이터베이스
 # ============================================

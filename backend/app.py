@@ -28,6 +28,17 @@ def create_app(config_override=None):
     def health():
         return {'status': 'ok'}, 200
 
+    @app.route('/api/debug/config')
+    def debug_config():
+        from flask import jsonify
+        import os
+        return jsonify({
+            "NAVER_CLIENT_ID": f"{Config.NAVER_CLIENT_ID[:5]}..." if Config.NAVER_CLIENT_ID else "None",
+            "NAVER_CLOUD_ID": f"{Config.NAVER_CLOUD_ID[:5]}..." if Config.NAVER_CLOUD_ID else "None",
+            "NAVER_CLOUD_SECRET_LEN": len(Config.NAVER_CLOUD_SECRET) if Config.NAVER_CLOUD_SECRET else 0,
+            "CWD": os.getcwd()
+        })
+
     return app
 
 
