@@ -22,9 +22,6 @@ class Config:
     NAVER_CLOUD_ID = os.getenv('NAVER_CLOUD_ID', NAVER_CLIENT_ID)
     NAVER_CLOUD_SECRET = os.getenv('NAVER_CLOUD_SECRET', NAVER_CLIENT_SECRET)
 
-    # 카카오맵 API 설정
-    KAKAO_API_KEY = os.getenv('KAKAO_API_KEY', '')
-
     # 환경 변수가 설정되지 않았을 때 경고 또는 에러
     if not NAVER_CLIENT_ID or not NAVER_CLIENT_SECRET:
         import warnings

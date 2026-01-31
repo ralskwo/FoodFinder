@@ -4,8 +4,6 @@ from models.menu import Menu
 from models.restaurant import Restaurant
 from crawlers.naver_place import NaverPlaceCrawler
 from crawlers.delivery_apps import DeliveryAppCrawler
-from api.kakao_map import KakaoMapClient
-from config import Config
 import logging
 
 logger = logging.getLogger(__name__)
@@ -19,7 +17,6 @@ class MenuService:
     def __init__(self):
         self.naver_crawler = NaverPlaceCrawler()
         self.delivery_crawler = DeliveryAppCrawler()
-        self.kakao_client = KakaoMapClient(Config.KAKAO_API_KEY) if Config.KAKAO_API_KEY else None
 
     def get_menus(self, restaurant: Restaurant, naver_link: str = None) -> list:
         """
@@ -65,7 +62,6 @@ class MenuService:
         크롤링 우선순위에 따라 메뉴 정보 수집
         1순위: 네이버 플레이스
         2순위: 배달앱
-        3순위: 카카오맵
         """
         menu_data = []
         source = None
@@ -86,15 +82,6 @@ class MenuService:
             )
             if menu_data:
                 source = 'delivery'
-
-        # 3순위: 카카오맵
-        if not menu_data and self.kakao_client:
-            menu_data = self.kakao_client.get_menu_info(
-                restaurant.name,
-                restaurant.address
-            )
-            if menu_data:
-                source = 'kakao'
 
         # source 추가
         for item in menu_data:
