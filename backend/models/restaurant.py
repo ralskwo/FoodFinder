@@ -12,6 +12,8 @@ class Restaurant(db.Model):
     name = db.Column(db.String(200), nullable=False)
     category = db.Column(db.String(50))
     address = db.Column(db.String(300))
+    road_address = db.Column(db.String(300))
+    review_count = db.Column(db.Integer)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
     phone = db.Column(db.String(20))
