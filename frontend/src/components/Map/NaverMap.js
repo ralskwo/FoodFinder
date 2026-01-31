@@ -75,9 +75,7 @@ const NaverMap = ({
                 map: mapInstanceRef.current,
                 title: markerData.name,
                 icon: {
-                    content: `<div class="custom-marker ${selectedMarkerId === markerData.id ? 'selected' : ''}">
-                        <span>${markerData.name.substring(0, 4)}</span>
-                    </div>`,
+                    content: '<div class="custom-marker ' + (selectedMarkerId === markerData.id ? 'selected' : '') + '"><span>' + markerData.name.substring(0, 4) + '</span></div>',
                     anchor: new window.naver.maps.Point(20, 40)
                 }
             });
@@ -94,7 +92,7 @@ const NaverMap = ({
 
     const reverseGeocode = async (lat, lng) => {
         try {
-            const response = await fetch(`/api/geocode/reverse?lat=${lat}&lng=${lng}`);
+            const response = await fetch('/api/geocode/reverse?lat=' + lat + '&lng=' + lng);
             const data = await response.json();
             if (data.address) {
                 setAddress(data.address);
