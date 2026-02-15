@@ -123,7 +123,9 @@ def search_restaurants():
 
     naver_client = NaverMapClient(
         Config.NAVER_CLIENT_ID,
-        Config.NAVER_CLIENT_SECRET
+        Config.NAVER_CLIENT_SECRET,
+        geocoding_client_id=Config.NAVER_CLOUD_ID,
+        geocoding_client_secret=Config.NAVER_CLOUD_SECRET
     )
 
     raw_results = naver_client.search_local(

@@ -12,9 +12,17 @@ class NaverMapClient:
 
     BASE_URL = 'https://openapi.naver.com/v1/search/local.json'
 
-    def __init__(self, client_id: str, client_secret: str):
+    def __init__(
+        self,
+        client_id: str,
+        client_secret: str,
+        geocoding_client_id: Optional[str] = None,
+        geocoding_client_secret: Optional[str] = None
+    ):
         self.client_id = client_id
         self.client_secret = client_secret
+        self.geocoding_client_id = geocoding_client_id
+        self.geocoding_client_secret = geocoding_client_secret
         self.headers = {
             'X-Naver-Client-Id': client_id,
             'X-Naver-Client-Secret': client_secret
@@ -77,7 +85,10 @@ class NaverMapClient:
         # 순환 참조 방지를 위해 함수 내부 import
         from api.naver_geocoding import NaverGeocodingClient 
         # 환경변수 로드가 필요하지만, 인스턴스를 매번 만들면 비효율적이므로 임시 키 사용 (OSM은 키 불필요)
-        geo_client = NaverGeocodingClient("dummy", "dummy")
+        geo_client = NaverGeocodingClient(
+            self.geocoding_client_id or "",
+            self.geocoding_client_secret or ""
+        )
 
         def process_item(item):
             # 기본 파싱

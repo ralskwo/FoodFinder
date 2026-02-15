@@ -1,6 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
 import './NaverMap.css';
 
+const NAVER_MAP_KEY_ID = (
+    process.env.REACT_APP_NAVER_MAP_KEY_ID ||
+    process.env.REACT_APP_NAVER_MAP_CLIENT_ID ||
+    ''
+).trim();
+
 const NaverMap = ({
     center,
     onCenterChange,
@@ -13,11 +19,40 @@ const NaverMap = ({
     const mapInstanceRef = useRef(null);
     const markersRef = useRef([]);
     const [address, setAddress] = useState('');
+    const [isScriptLoaded, setIsScriptLoaded] = useState(false);
 
-    // 지도 초기화 (최초 1회만 실행)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // 네이버 지도 스크립트 동적 로드
     useEffect(() => {
-        if (!window.naver || !mapRef.current) return;
+        if (window.naver && window.naver.maps) {
+            setIsScriptLoaded(true);
+            return;
+        }
+
+        if (!NAVER_MAP_KEY_ID) {
+            console.error('Naver Maps Key ID is missing. Set REACT_APP_NAVER_MAP_KEY_ID in frontend/.env');
+            return;
+        }
+
+        const script = document.createElement('script');
+        // Naver Cloud Platform (console.ncloud.com) 사용
+        script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${encodeURIComponent(NAVER_MAP_KEY_ID)}`;
+        script.async = true;
+        script.onload = () => {
+            setIsScriptLoaded(true);
+        };
+        script.onerror = () => {
+            console.error('네이버 지도 스크립트 로드 실패');
+        };
+        document.head.appendChild(script);
+
+        return () => {
+            // cleanup 시 스크립트 제거하지 않음 (재사용을 위해)
+        };
+    }, []);
+
+    // 지도 초기화 (스크립트 로드 후 실행)
+    useEffect(() => {
+        if (!isScriptLoaded || !window.naver || !mapRef.current) return;
 
         const mapOptions = {
             center: new window.naver.maps.LatLng(center.lat, center.lng),
@@ -48,23 +83,28 @@ const NaverMap = ({
 
         return () => {
             if (mapInstanceRef.current) {
-                mapInstanceRef.current.destroy();
+                try {
+                    mapInstanceRef.current.destroy();
+                } catch (e) {
+                    // 무시
+                }
+                mapInstanceRef.current = null;
             }
         };
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isScriptLoaded]);
 
     // 중심 좌표 변경
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     useEffect(() => {
-        if (mapInstanceRef.current && center) {
-            const newCenter = new window.naver.maps.LatLng(center.lat, center.lng);
-            mapInstanceRef.current.setCenter(newCenter);
-        }
-    }, [center.lat, center.lng]);
+        if (!isScriptLoaded || !window.naver || !mapInstanceRef.current || !center) return;
+        const newCenter = new window.naver.maps.LatLng(center.lat, center.lng);
+        mapInstanceRef.current.setCenter(newCenter);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [center.lat, center.lng, isScriptLoaded]);
 
     // 마커 업데이트
     useEffect(() => {
-        if (!mapInstanceRef.current || !window.naver) return;
+        if (!isScriptLoaded || !mapInstanceRef.current || !window.naver) return;
 
         // 기존 마커 제거
         markersRef.current.forEach(marker => marker.setMap(null));
@@ -90,7 +130,7 @@ const NaverMap = ({
 
             markersRef.current.push(marker);
         });
-    }, [markers, selectedMarkerId, onMarkerClick]);
+    }, [markers, selectedMarkerId, onMarkerClick, isScriptLoaded]);
 
     const reverseGeocode = async (lat, lng) => {
         try {
@@ -106,9 +146,12 @@ const NaverMap = ({
 
     return (
         <div className="naver-map-container">
-            <div ref={mapRef} className="naver-map" />
+            {!isScriptLoaded && (
+                <div className="map-loading">지도를 불러오는 중...</div>
+            )}
+            <div ref={mapRef} className="naver-map" style={{ display: isScriptLoaded ? 'block' : 'none' }} />
 
-            {showCenterPin && (
+            {showCenterPin && isScriptLoaded && (
                 <>
                     <div className="center-pin">📍</div>
                     <div className="center-address">
