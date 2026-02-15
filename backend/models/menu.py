@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from database import db
+from utils.text_normalizer import normalize_menu_name
 
 
 class Menu(db.Model):
@@ -21,7 +22,7 @@ class Menu(db.Model):
     def to_dict(self):
         return {
             'id': self.id,
-            'name': self.name,
+            'name': normalize_menu_name(self.name, fallback='메뉴명 확인 필요'),
             'price': self.price,
             'is_representative': self.is_representative,
             'source': self.source,

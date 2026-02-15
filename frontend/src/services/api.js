@@ -16,9 +16,10 @@ export const searchRestaurants = async (params) => {
             lng: params.longitude || params.lng,
             radius: params.radius,
             budget: params.budget,
-            budget_type: params.budgetType,
+            budget_type: params.budgetType || params.budget_type,
             categories: params.categories,
-            query: params.query
+            query: params.query,
+            location_hint: params.locationHint || params.location_hint,
         });
         return response.data;
     } catch (error) {

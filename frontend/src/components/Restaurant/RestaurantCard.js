@@ -3,6 +3,10 @@ import "./RestaurantCard.css";
 
 const RestaurantCard = ({ restaurant, onDetailClick, isSelected }) => {
     const formatDistance = (meters) => {
+        if (meters === null || meters === undefined || Number.isNaN(Number(meters))) {
+            return "-";
+        }
+
         if (meters >= 1000) {
             return (meters / 1000).toFixed(1) + "km";
         }

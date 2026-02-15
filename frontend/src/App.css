@@ -66,6 +66,14 @@
     gap: 8px;
 }
 
+.address-search {
+    margin-bottom: 8px;
+}
+
+.address-search .search-button {
+    background: #2f9e44;
+}
+
 .search-input {
     flex: 1;
     padding: 12px 16px;

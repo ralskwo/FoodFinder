@@ -1,71 +1,109 @@
-import pytest
+from unittest.mock import Mock, patch
+
 import requests
-from unittest.mock import patch, Mock
-from backend.api.naver_map import NaverMapClient
+
+from api.naver_map import NaverMapClient
 
 
-@pytest.fixture
-def naver_client():
-    """네이버 클라이언트 픽스처"""
-    return NaverMapClient(
-        client_id='test-client-id',
-        client_secret='test-client-secret'
+def _mock_response(status_code, payload):
+    response = Mock()
+    response.status_code = status_code
+    response.json.return_value = payload
+    return response
+
+
+def test_search_local_success_with_geocoding():
+    client = NaverMapClient(
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        geocoding_client_id="test-cloud-id",
+        geocoding_client_secret="test-cloud-secret",
     )
 
-
-def test_search_local_success(naver_client):
-    """장소 검색 성공 테스트"""
-    mock_response = {
-        'items': [
+    api_payload = {
+        "items": [
             {
-                'title': '맛있는 <b>한식</b>집',
-                'category': '한식>일반한식',
-                'address': '서울특별시 강남구',
-                'roadAddress': '서울특별시 강남구 테헤란로 123',
-                'mapx': '1269780000',
-                'mapy': '375665000',
-                'telephone': '02-1234-5678'
+                "title": "<b>맛집</b> 한식당",
+                "category": "한식>백반",
+                "address": "서울시 중구",
+                "roadAddress": "서울시 중구 세종대로",
+                "telephone": "02-1234-5678",
+                "link": "https://map.naver.com/p/entry/place/123456",
             }
         ]
     }
 
-    with patch('backend.api.naver_map.requests.get') as mock_get:
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = mock_response
+    with patch(
+        "api.naver_map.requests.get",
+        side_effect=[
+            _mock_response(200, api_payload),
+            _mock_response(200, {"items": []}),
+        ],
+    ), patch(
+        "api.naver_geocoding.NaverGeocodingClient.address_to_coord",
+        return_value={"latitude": 37.5665, "longitude": 126.9780, "address": "서울시 중구"},
+    ):
+        results = client.search_local(
+            "한식",
+            latitude=37.5665,
+            longitude=126.9780,
+            radius=1500,
+        )
 
-        results = naver_client.search_local('한식', latitude=37.5665, longitude=126.9780)
-
-        assert len(results) == 1
-        assert '한식' in results[0]['title']
-        assert results[0]['latitude'] == 37.5665
-        assert results[0]['longitude'] == 126.9780
-
-
-def test_search_local_api_error(naver_client):
-    """API 에러 처리 테스트"""
-    with patch('backend.api.naver_map.requests.get') as mock_get:
-        mock_get.return_value.status_code = 401
-
-        results = naver_client.search_local('한식')
-        assert results == []
-
-
-def test_search_local_network_error(naver_client):
-    """네트워크 에러 처리 테스트"""
-    with patch('backend.api.naver_map.requests.get') as mock_get:
-        mock_get.side_effect = requests.exceptions.RequestException("Connection failed")
-
-        results = naver_client.search_local('한식')
-        assert results == []
+    assert len(results) == 1
+    assert results[0]["title"] == "맛집 한식당"
+    assert results[0]["latitude"] == 37.5665
+    assert results[0]["longitude"] == 126.9780
+    assert results[0]["distance"] <= 1500
 
 
-def test_search_local_empty_response(naver_client):
-    """빈 응답 처리 테스트"""
-    mock_response = {'items': []}
+def test_search_local_network_error_returns_empty():
+    client = NaverMapClient(client_id="test-client-id", client_secret="test-client-secret")
 
-    with patch('backend.api.naver_map.requests.get') as mock_get:
-        mock_get.return_value.status_code = 200
-        mock_get.return_value.json.return_value = mock_response
+    with patch("api.naver_map.requests.get", side_effect=requests.exceptions.RequestException("boom")):
+        results = client.search_local("한식")
 
-        results = naver_client.search_local('없는음식점')
-        assert results == []
+    assert results == []
+
+
+def test_search_local_returns_fallback_when_out_of_radius():
+    client = NaverMapClient(
+        client_id="test-client-id",
+        client_secret="test-client-secret",
+        geocoding_client_id="test-cloud-id",
+        geocoding_client_secret="test-cloud-secret",
+    )
+
+    api_payload = {
+        "items": [
+            {
+                "title": "거리먼 식당",
+                "category": "한식",
+                "address": "부산시 해운대구",
+                "roadAddress": "부산시 해운대구 우동",
+                "telephone": "",
+                "link": "",
+            }
+        ]
+    }
+
+    with patch(
+        "api.naver_map.requests.get",
+        side_effect=[
+            _mock_response(200, api_payload),
+            _mock_response(200, {"items": []}),
+        ],
+    ), patch(
+        "api.naver_geocoding.NaverGeocodingClient.address_to_coord",
+        return_value={"latitude": 35.1587, "longitude": 129.1604, "address": "부산시 해운대구"},
+    ):
+        results = client.search_local(
+            "한식",
+            latitude=37.5665,
+            longitude=126.9780,
+            radius=100,
+        )
+
+    assert len(results) == 1
+    assert results[0]["title"] == "거리먼 식당"
+    assert results[0]["distance"] > 100

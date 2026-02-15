@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import './App.css';
-import { searchRestaurants, reverseGeocode } from './services/api';
+import { geocodeAddress, reverseGeocode, searchRestaurants } from './services/api';
 import SplitLayout from './components/Layout/SplitLayout';
 import NaverMap from './components/Map/NaverMap';
 import FilterPanel from './components/FilterPanel';
@@ -8,95 +8,144 @@ import RestaurantCard from './components/Restaurant/RestaurantCard';
 import RestaurantDetail from './components/Restaurant/RestaurantDetail';
 
 function App() {
-    const [location, setLocation] = useState({ lat: 37.5665, lng: 126.978 });
-    const [locationAddress, setLocationAddress] = useState('위치 정보를 가져오는 중...');
+    const [location, setLocation] = useState({ lat: 37.5665, lng: 126.9780 });
+    const [locationAddress, setLocationAddress] = useState('위치 정보를 불러오는 중...');
+    const [addressQuery, setAddressQuery] = useState('');
     const [isLocationMode, setIsLocationMode] = useState(false);
+
     const [searchQuery, setSearchQuery] = useState('');
     const [restaurants, setRestaurants] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+
     const [filters, setFilters] = useState({
         radius: 1000,
         categories: [],
         budget: null,
-        budgetType: 'menu'
+        budgetType: 'menu',
     });
+
     const [selectedRestaurant, setSelectedRestaurant] = useState(null);
     const [showDetail, setShowDetail] = useState(false);
 
-    // 초기 위치 설정
     useEffect(() => {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    const coords = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude
-                    };
-                    setLocation(coords);
-                    getAddressFromCoords(coords.lat, coords.lng);
-                },
-                (error) => {
-                    console.error('위치 정보를 가져올 수 없습니다:', error);
-                    setLocationAddress('서울특별시 중구 (기본 위치)');
-                }
-            );
+        if (!navigator.geolocation) {
+            setLocationAddress('브라우저 위치 권한을 사용할 수 없습니다.');
+            return;
         }
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const coords = {
+                    lat: position.coords.latitude,
+                    lng: position.coords.longitude,
+                };
+                setLocation(coords);
+                loadAddress(coords.lat, coords.lng);
+            },
+            () => {
+                setLocationAddress('현재 위치를 가져오지 못했습니다. 기본 위치를 사용합니다.');
+            }
+        );
     }, []);
 
-    const getAddressFromCoords = async (lat, lng) => {
+    const loadAddress = async (lat, lng) => {
         try {
             const data = await reverseGeocode(lat, lng);
-            if (data && data.address) {
+            if (data?.address) {
                 setLocationAddress(data.address);
             }
-        } catch (error) {
-            console.error('주소 변환 실패:', error);
+        } catch (addressError) {
+            console.error('Failed to reverse geocode', addressError);
         }
     };
 
     const handleFilterChange = (key, value) => {
-        setFilters(prev => ({ ...prev, [key]: value }));
+        setFilters((prev) => ({ ...prev, [key]: value }));
     };
 
-    const handleSearch = async () => {
+    const handleAddressSearch = async () => {
+        if (!addressQuery.trim()) {
+            return;
+        }
+
         setLoading(true);
         setError(null);
 
         try {
+            const data = await geocodeAddress(addressQuery.trim());
+            if (!data?.latitude || !data?.longitude) {
+                throw new Error('No coordinates in geocoding response');
+            }
+
+            const coords = { lat: data.latitude, lng: data.longitude };
+            setLocation(coords);
+            setLocationAddress(data.address || addressQuery.trim());
+            setIsLocationMode(false);
+
+            // Move map first, then search around the selected address.
+            await handleSearch(coords, data.address || addressQuery.trim());
+        } catch (searchError) {
+            console.error('Failed to geocode address', searchError);
+            if (!searchError.response) {
+                setError('백엔드 서버(5000)에 연결할 수 없습니다. run.bat으로 서버를 다시 실행해 주세요.');
+            } else {
+                setError('주소를 찾지 못했습니다. 주소를 더 구체적으로 입력해 주세요.');
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSearch = async (overrideLocation = null, overrideLocationHint = null) => {
+        setLoading(true);
+        setError(null);
+
+        try {
+            const targetLocation = overrideLocation || location;
+            const targetLocationHint = overrideLocationHint || locationAddress;
+
             const params = {
-                lat: location.lat,
-                lng: location.lng,
+                lat: targetLocation.lat,
+                lng: targetLocation.lng,
                 radius: filters.radius,
-                query: searchQuery || '음식점',
+                query: (searchQuery || '음식점').trim(),
                 budget: filters.budget,
                 budgetType: filters.budgetType,
-                categories: filters.categories
+                categories: filters.categories,
+                locationHint: targetLocationHint,
             };
 
             const data = await searchRestaurants(params);
             setRestaurants(data.results || []);
-        } catch (err) {
-            setError('검색에 실패했습니다.');
+        } catch (searchError) {
+            console.error('Failed to search restaurants', searchError);
+            if (!searchError.response) {
+                setError('백엔드 서버(5000)에 연결할 수 없습니다. run.bat으로 서버를 다시 실행해 주세요.');
+            } else {
+                setError('검색에 실패했습니다. 잠시 후 다시 시도해 주세요.');
+            }
         } finally {
             setLoading(false);
         }
     };
 
     const handleMapCenterChange = (newCenter) => {
-        if (isLocationMode) {
-            setLocation(newCenter);
-            getAddressFromCoords(newCenter.lat, newCenter.lng);
+        if (!isLocationMode) {
+            return;
         }
+
+        setLocation(newCenter);
+        loadAddress(newCenter.lat, newCenter.lng);
     };
 
-    const handleSetLocation = () => {
+    const handleSetLocation = async () => {
         setIsLocationMode(false);
-        handleSearch();
+        await handleSearch(location, locationAddress);
     };
 
     const handleMarkerClick = (markerData) => {
-        const restaurant = restaurants.find(r => r.place_id === markerData.id);
+        const restaurant = restaurants.find((item) => item.place_id === markerData.id);
         if (restaurant) {
             setSelectedRestaurant(restaurant);
         }
@@ -111,15 +160,15 @@ function App() {
         setShowDetail(false);
     };
 
-    // 마커 데이터 생성
-    const markers = restaurants.map(r => ({
-        id: r.place_id,
-        lat: r.latitude,
-        lng: r.longitude,
-        name: r.name
-    })).filter(m => m.lat && m.lng);
+    const markers = restaurants
+        .map((restaurant) => ({
+            id: restaurant.place_id,
+            lat: restaurant.latitude,
+            lng: restaurant.longitude,
+            name: restaurant.name,
+        }))
+        .filter((marker) => Number.isFinite(marker.lat) && Number.isFinite(marker.lng));
 
-    // 좌측 패널 (리스트)
     const leftPanel = (
         <div className="list-panel">
             <div className="search-section">
@@ -129,8 +178,28 @@ function App() {
                     <button
                         className="location-btn"
                         onClick={() => setIsLocationMode(true)}
+                        type="button"
                     >
-                        위치 변경
+                        핀으로 위치 선택
+                    </button>
+                </div>
+
+                <div className="search-input-group address-search">
+                    <input
+                        type="text"
+                        value={addressQuery}
+                        onChange={(event) => setAddressQuery(event.target.value)}
+                        placeholder="주소 입력 (예: 서울 강남구 테헤란로 152)"
+                        className="search-input"
+                        onKeyDown={(event) => event.key === 'Enter' && handleAddressSearch()}
+                    />
+                    <button
+                        onClick={handleAddressSearch}
+                        className="search-button"
+                        type="button"
+                        disabled={loading}
+                    >
+                        주소 적용
                     </button>
                 </div>
 
@@ -138,17 +207,18 @@ function App() {
                     <input
                         type="text"
                         value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="검색어 입력 (예: 한식, 파스타)"
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        placeholder="음식 키워드 (예: 한식, 돈까스, 국밥)"
                         className="search-input"
-                        onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                        onKeyDown={(event) => event.key === 'Enter' && handleSearch()}
                     />
                     <button
-                        onClick={handleSearch}
+                        onClick={() => handleSearch()}
                         className="search-button"
+                        type="button"
                         disabled={loading}
                     >
-                        {loading ? '...' : '검색'}
+                        {loading ? '검색 중...' : '검색'}
                     </button>
                 </div>
             </div>
@@ -168,7 +238,7 @@ function App() {
                             key={restaurant.place_id}
                             restaurant={restaurant}
                             onDetailClick={handleDetailClick}
-                            isSelected={selectedRestaurant && selectedRestaurant.place_id === restaurant.place_id}
+                            isSelected={selectedRestaurant?.place_id === restaurant.place_id}
                         />
                     ))}
                 </div>
@@ -176,7 +246,6 @@ function App() {
         </div>
     );
 
-    // 우측 패널 (지도)
     const rightPanel = (
         <div className="map-panel">
             <NaverMap
@@ -190,26 +259,22 @@ function App() {
 
             {isLocationMode && (
                 <div className="location-mode-controls">
-                    <p>지도를 이동하여 원하는 위치를 선택하세요</p>
-                    <button onClick={handleSetLocation}>이 위치로 검색</button>
-                    <button onClick={() => setIsLocationMode(false)}>취소</button>
+                    <p>지도의 중심 핀을 원하는 위치로 이동한 뒤 위치를 확정하세요.</p>
+                    <button onClick={handleSetLocation} type="button">이 위치로 검색</button>
+                    <button onClick={() => setIsLocationMode(false)} type="button">취소</button>
                 </div>
             )}
         </div>
     );
 
-    // 상세 패널
     const detailPanel = selectedRestaurant && (
-        <RestaurantDetail
-            restaurant={selectedRestaurant}
-            onClose={handleCloseDetail}
-        />
+        <RestaurantDetail restaurant={selectedRestaurant} onClose={handleCloseDetail} />
     );
 
     return (
         <div className="App">
             <header className="App-header">
-                <h1>🍽️ FoodFinder</h1>
+                <h1>FoodFinder</h1>
             </header>
 
             <SplitLayout

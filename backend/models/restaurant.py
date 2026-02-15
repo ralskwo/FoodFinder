@@ -44,6 +44,8 @@ class Restaurant(db.Model):
             'name': self.name,
             'category': self.category,
             'address': self.address,
+            'road_address': self.road_address,
+            'review_count': self.review_count,
             'latitude': self.latitude,
             'longitude': self.longitude,
             'phone': self.phone,
