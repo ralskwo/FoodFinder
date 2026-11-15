@@ -51,7 +51,7 @@ cd ..
 ```env
 NAVER_CLIENT_ID=발급받은_클라이언트_ID
 NAVER_CLIENT_SECRET=발급받은_클라이언트_시크릿
-SECRET_KEY=mysecretkey123
+SECRET_KEY=<LOCAL_ONLY>
 DATABASE_URL=sqlite:///foodfinder.db
 ```
 
